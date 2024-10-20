@@ -46,13 +46,14 @@ jobs:
        sed -i 's/dnsutils=1:9.11.5.P4+dfsg-5.1+deb10u9/dnsutils/g' Dockerfile
        docker build -f Dockerfile -t myapp:latest .
 
-  # - name: Docker Scout Scan
+# - name: Docker Scout Scan
      # run: |
        # curl -fsSL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh -o install-scout.sh
        # sh install-scout.sh
        # echo ${{ secrets.REPO_PWD }} | docker login -u ${{ secrets.REPO_USER }} --password-stdin
        # docker scout quickview
        # docker scout cves
+
    - name: Docker Scout Scan
      uses: docker/scout-action@v1.0.9
      with:
@@ -61,12 +62,20 @@ jobs:
        command: quickview,cves
        only-severities: critical,high
        sarif-file: scout-report.sarif
+
    - name: Upload Artifact
      uses: actions/upload-artifact@v3
      if: always()
      with:
        name: docker-scout-findings
        path: scout-report.sarif
+
+
+
+
+
+
+
 
        
 
