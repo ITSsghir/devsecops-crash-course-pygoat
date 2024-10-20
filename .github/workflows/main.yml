@@ -42,9 +42,7 @@ jobs:
 
    - name: Build Docker Image
      run: |
-       # Créer une image intermédiaire pour installer les paquets requis
-       docker run --rm -v $(pwd):/app -w /app python:3.7-slim /bin/sh -c "apt-get update && apt-get install --no-install-recommends -y dnsutils libpq-dev python3-dev"
-       # Construire l'image finale
+       # Construire l'image sans spécifier les versions
        docker build -f Dockerfile -t myapp:latest .
 
    - name: Docker Scout Scan
@@ -54,4 +52,5 @@ jobs:
         echo ${{ secrets.REPO_PWD }} | docker login -u ${{ secrets.REPO_USER }} --password-stdin
         docker scout quickview
         docker scout cves
+
 
