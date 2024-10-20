@@ -27,7 +27,7 @@ jobs:
      with:
       name: bandit-findings
       path: bandit-report.json
- image_scan:
+image_scan:
    name: Build Image and Run Image Scan
    runs-on: ubuntu-latest
 
@@ -41,7 +41,11 @@ jobs:
       docker_version: '20.10.7'
 
    - name: Build Docker Image
-     run: docker build -f Dockerfile -t myapp:latest .
+     run: |
+       # Créer une image intermédiaire pour installer les paquets requis
+       docker run --rm -v $(pwd):/app -w /app python:3.7-slim /bin/sh -c "apt-get update && apt-get install --no-install-recommends -y dnsutils libpq-dev python3-dev"
+       # Construire l'image finale
+       docker build -f Dockerfile -t myapp:latest .
 
    - name: Docker Scout Scan
      run: |
@@ -50,3 +54,4 @@ jobs:
         echo ${{ secrets.REPO_PWD }} | docker login -u ${{ secrets.REPO_USER }} --password-stdin
         docker scout quickview
         docker scout cves
+
