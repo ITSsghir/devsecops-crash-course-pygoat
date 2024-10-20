@@ -1,65 +1,75 @@
 name: CI
 
-on: [push]
+on: 
+  push:
 
 jobs:
- sast_scan:
-   name: Run Bandit Scan
-   runs-on: ubuntu-latest
+  sast_scan:
+    name: Run Bandit Scan
+    runs-on: ubuntu-latest
 
-   steps:
-   - name: Checkout code
-     uses: actions/checkout@v2
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-   - name: Set up Python
-     uses: actions/setup-python@v2
-     with:
-       python-version: 3.8
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
 
-   - name: Install Bandit
-     run: pip install bandit
+      - name: Install Bandit
+        run: pip install bandit
 
-   - name: Run Bandit Scan
-     run: bandit -ll -ii -r . -f json -o bandit-report.json
+      - name: Run Bandit Scan
+        run: bandit -ll -ii -r . -f json -o bandit-report.json
 
-   - name: Upload Artifact
-     uses: actions/upload-artifact@v3
-     if: always()
-     with:
-      name: bandit-findings
-      path: bandit-report.json
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: bandit-findings
+          path: bandit-report.json
 
- image_scan:
-  name: Build Image and Run Image Scan
-  runs-on: ubuntu-latest
+  image_scan:
+    name: Build Image and Run Image Scan
+    runs-on: ubuntu-latest
 
-  steps:
-  - name: Checkout code
-    uses: actions/checkout@v2
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-  - name: Set up Docker
-    uses: docker-practice/actions-setup-docker@v1
-    with:
-      docker_version: '20.10.7'
+      - name: Set up Docker
+        uses: docker-practice/actions-setup-docker@v1
+        with:
+          docker_version: '20.10.7'
 
-  - name: Build Docker Image
-    run: docker build -f Dockerfile -t myapp:latest .
+      - name: Build Docker Image
+        run: |
+          # Remplacer dnsutils par la dernière version disponible
+          sed -i 's/dnsutils=1:9.11.5.P4+dfsg-5.1+deb10u9/dnsutils/g' Dockerfile
+          # Construire l'image
+          docker build -f Dockerfile -t myapp:latest .
 
-  - name: Docker Scout Scan
-    uses: docker/scout-action@v1.0.9
-    with:
-      dockerhub-user: ${{ secrets.REPO_USER }}
-      dockerhub-password: ${{ secrets.REPO_PWD }}
-      command: quickview,cves
-      only-severities: critical,high
-      sarif-file: scout-report.sarif
-    env:
-      DOCKER_SCAN_DEBUG: true  # Optionnel, pour avoir plus de logs
+      - name: Verify Docker Image
+        run: docker images
 
-  - name: Upload Artifact
-    uses: actions/upload-artifact@v3
-    if: always()
-    with:
-      name: docker-scout-findings
-      path: scout-report.sarif
+      - name: Clean up
+        run: |
+          docker system prune -f
+          docker volume prune -f
 
+      - name: Docker Scout Scan
+        uses: docker/scout-action@v1.14.0 
+        with:
+          dockerhub-user: ${{ secrets.REPO_USER }}
+          dockerhub-password: ${{ secrets.REPO_PWD }}
+          command: quickview,cves
+          only-severities: critical,high
+          sarif-file: scout-report.sarif
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: docker-scout-findings
+          path: scout-report.sarif
