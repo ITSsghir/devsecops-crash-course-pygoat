@@ -41,11 +41,7 @@ image_scan:
       docker_version: '20.10.7'
 
    - name: Build Docker Image
-     run: |
-       # Créer une image intermédiaire pour installer les paquets requis
-       docker run --rm -v $(pwd):/app -w /app python:3.7-slim /bin/sh -c "apt-get update && apt-get install --no-install-recommends -y dnsutils libpq-dev python3-dev"
-       # Construire l'image finale
-       docker build -f Dockerfile -t myapp:latest .
+     run: docker build -f Dockerfile -t myapp:latest .
 
    - name: Docker Scout Scan
      run: |
